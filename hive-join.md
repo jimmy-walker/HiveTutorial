@@ -4,11 +4,13 @@
 ![](picture/join.png)
 
 ##注意事项
-###1.join就是innerjoin的缩写
+###1.join就是innerjoin的缩写；left/right outer join是left/right join的另一种写法
 
 ###2.从join中select哪一个表的keywords字段的问题，如果自己写程序会发现其实inner join返回两个名字都叫keywords。但是实际上暗含"."，因此select中必须加入'.'，所以若两者完全相等，其实选哪个都一样。
 
-###3.join中的表若有where条件，就放在on里面。
+###3.
+
+###4.join中的表若有where条件，就放在on里面。
 ```hive
 hive -e"
 set mapreduce.job.queuename=root.baseDepSarchQueue;
