@@ -45,3 +45,32 @@ from temp.jlist_keyword_ard_d as torigin inner join
 )tall 
 on (torigin.mid = tall.allmid and torigin.dt = '2017-07-20' and torigin.song = 'xihuannidengziqi');">xihuannidengziqi-2017-07-20-test.txt
 ```
+
+##2.在传入字符串到hive脚本时，如果有单引号，需要注意加入双斜杠进行转义，因为双斜杠先会被转义为单斜杠，再与单引号转义为引号
+
+```scala
+val input="('don\\'t say goodbye','战神榜')"
+val sql_original=s"""select 1 as label, query, dt, sum(search_count) as cnt from (
+select inputstring as query, dt, count(is_valid) as search_count, 'ard' as plat 
+from ddl.dt_search_ard_d 
+where dt >= '$date_start' and dt <= '$date_end' 
+and inputtype in ('1','2','3','4','6','7','8') 
+and inputstring in $input 
+group by inputstring, dt 
+union all 
+select keyword as query, dt, count(valid) as search_count, 'pc' as plat 
+from ddl.dt_search_pc_d 
+where dt >= '$date_start' and dt <= '$date_end' 
+and inputtype in ('1','2','3','4','5','6','8') 
+and keyword in $input 
+group by keyword, dt 
+union all 
+select inputstring as query, dt, count(is_valid) as search_count, 'ios' as plat 
+from ddl.dt_search_ios_d 
+where dt >= '$date_start' and dt <= '$date_end' 
+and inputtype in ('1','2','3','4','6','7','8') 
+and inputstring in $input 
+group by inputstring, dt
+)triple_count 
+group by query, dt"""
+```
