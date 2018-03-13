@@ -24,3 +24,111 @@ Stage-Stage-1: Map: 396  Reduce: 457   Cumulative CPU: 10056.7 sec   HDFS Read: 
 ##4.order by和sort by的区别
 Hive中的order by跟传统的sql语言中的order by作用是一样的，会对查询的结果做一次全局排序，所以说，只有hive的sql中制定了order by所有的数据都会到同一个reducer进行处理（不管有多少map，也不管文件有多少的block只会启动一个reducer）。但是对于大量数据这将会消耗很长的时间去执行。
 Hive中指定了sort by，那么在每个reducer端都会做排序，也就是说保证了局部有序（每个reducer出来的数据是有序的，但是不能保证所有的数据是有序的，除非只有一个reducer），好处是：执行了局部排序之后可以为接下去的全局排序提高不少的效率（其实就是做一次归并排序就可以做到全局排序了）。
+
+##5.case when条件判断
+case when语法：
+```hive
+CASE  [ expression ] 
+  WHEN condition1 THEN result1 
+  WHEN condition2 THEN result2 
+  ... 
+  WHEN conditionn THEN resultn 
+  ELSE result 
+END
+```
+
+###使用场合1：在select中使用
+```hive
+SELECT
+  CASE WHEN fo LIKE '搜索结果/%' THEN split(fo,'/')[2] WHEN fo LIKE '音乐电台/公共电台/综合搜索/%' THEN split(fo,'/')[3] END kw,
+```
+**<u>注意，在聚合函数后的一个空格加上一个名字表示别名。**</u>
+
+###适用场合2：与聚合函数搭配使用
+```hive
+SUM(CASE WHEN sex_age.sex='Male' THEN sex_age.age ELSE 0 END)
+```
+
+##6.coalesce返回值条件判断
+COALESCE(a1, a2, ...)  返回第一个非null的参数值，如果参数全为null，返回null。
+
+##7.hive字符串函数
+hive中字符串函数，常常用于where条件和select中。
+
+trim(string A)：去掉字符串A两端的空格。
+
+运算符`A <> B`，意思是NULL if A or B is NULL, TRUE if expression A is NOT equal to expression B, otherwise FALSE.
+
+```hive
+where trim(fs) <> '播放错误'
+```
+split(string str, string pat)：用pat分割字符串str，pat为正则表达式，返回为一个数组
+```hive
+where split('fo_2','/')[2] like '薛之谦%'
+```
+upper(string A)或ucase(string A)：返回字符串A的大写形式
+
+##8.类型转换
+cast(salary AS BIGINT)，用于select和where中
+```hive
+cast(st as bigint)
+```
+<u>此例子中是将string格式转为int，因为数字可能很大，所以设置成bigint。</u>
+
+## 9.指定精度取整函数
+
+round(a, d)，返回四舍五入保留d个小数位，默认为0个小数位，但是会有`.0`的情况。
+
+## 10.绝对值
+
+abs返回绝对值
+
+## 11.分组计算
+
+类似pandas中的分组再计算的效果，hive可用ROW_NUMBER()
+ROW_NUMBER() OVER (partition BY COLUMN_A ORDER BY COLUMN_B ASC/DESC) rn
+rn 是排序的别名执行时每组的编码从1开始 
+partition by：类似hive的建表，分区的意思；COLUMN_A 是分组字段 
+order by ：排序，默认是升序，加desc降序；COLUMN_B 是排序字段
+
+```hive
+select sh,sn from (select sh,sn,row_number() over(partition by sh order by cnt desc) rn from (select sh,sn,count(1) cnt from pc_part where spt_cnt>=10 group by sh,sn) c0) c1 where rn=1
+```
+## 12.通配符
+
+hive通配符与sql通配符类似，在where中与like搭配使用
+
+%	替代 0 个或多个字符
+_	替代一个字符
+[charlist]	字符列中的任何单一字符
+[^charlist]或[!charlist]	不在字符列中的任何单一字符
+
+## 13.正则表达式解析函数
+
+语法: regexp_extract(string subject, string pattern, int index)
+
+返回值: string
+
+说明：将字符串subject按照pattern正则表达式的规则拆分，返回index指定的字符。
+```linux
+hive> select regexp_extract('foothebar', 'foo(.*?)(bar)', 1) fromiteblog;
+the
+hive> select regexp_extract('foothebar', 'foo(.*?)(bar)', 2) fromiteblog;
+bar
+hive> select regexp_extract('foothebar', 'foo(.*?)(bar)', 0) fromiteblog;
+foothebar
+```
+注意，在有些情况下要使用转义字符，下面的等号要用双竖线转义，这是java正则表达式的规则。
+
+```hive
+select data_field,
+     regexp_extract(data_field,'.*?bgStart\\=([^&]+)',1) as aaa,
+     regexp_extract(data_field,'.*?contentLoaded_headStart\\=([^&]+)',1) as bbb,
+     regexp_extract(data_field,'.*?AppLoad2Req\\=([^&]+)',1) as ccc
+     from pt_nginx_loginlog_st
+     where pt = '2012-03-26'limit 2;
+```
+## 14.RLIKE和regexp，功能一样
+
+like不是正则，而是通配符。这个通配符可以看一下SQL的标准，例如%代表任意多个字符。
+rlike是正则，正则的写法与java一样。'\'需要使用'\\',例如'\w'需要使用'\\w'
