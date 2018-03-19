@@ -33,6 +33,21 @@ on (a.imei = b.mei and a.dt='2017-07-20')
 ;"
 ```
 
+###6.LEFT SEMI JOIN 是 IN/EXISTS 子查询的一种更高效的实现。
+LEFT SEMI JOIN 的限制是， JOIN 子句中右边的表只能在ON 子句中设置过滤条件，在 WHERE 子句、SELECT 子句或其他地方过滤都不行。
+```hive
+SELECT a.key, a.value  
+FROM a  
+WHERE a.key in  
+ (SELECT b.key  
+  FROM B);  
+```
+可以被重写为，注意此时都需要改成a.变量的名字
+```hive
+SELECT a.key, a.val  
+   FROM a LEFT SEMI JOIN b on (a.key = b.key)  
+```
+
 ##常用代码
 ```hive
 SELECT <select_list>
@@ -73,6 +88,7 @@ FULL OUTER JOIN TableB B
 ON A.Key = B.Key
 WHERE A.Key IS NULL
 OR B.Key IS NULL
+
 ```
 
 ##References
