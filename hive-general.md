@@ -50,10 +50,11 @@ show create table common.dim_qk_audio_d;
 
 ## 建立测试表进行测试
 
-1.新建表
+1.新建表（如果有多行，使用' '）
 
 ```hive
 create table temp.jdual (dummy string);
+create table temp.jdual4 (kw string, scid string, play int) ROW FORMAT DELIMITED FIELDS TERMINATED BY ' ' LINES TERMINATED BY '\n' ;
 ```
 
 2.加载数据
