@@ -35,6 +35,7 @@ on (a.imei = b.mei and a.dt='2017-07-20')
 
 ###6.LEFT SEMI JOIN 是 IN/EXISTS 子查询的一种更高效的实现。
 LEFT SEMI JOIN 的限制是， JOIN 子句中右边的表只能在ON 子句中设置过滤条件，在 WHERE 子句、SELECT 子句或其他地方过滤都不行。
+**注意LEFT SEMI JOIN只是为了限制而已，无法提取LEFT SEMI JOIN中的字段，因此若要提取只能用INNER JOIN搭配上ON的形式。**
 ```hive
 SELECT a.key, a.value  
 FROM a  
