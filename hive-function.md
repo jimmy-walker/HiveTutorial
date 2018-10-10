@@ -186,3 +186,16 @@ select day_id,mac_id,sum(day_num) sum_num from test_temp_mac_id group by day_id,
 | 20171012 | 20130  | 7       |
 | 20171013 | 12922  | 1       |
 | 20171013 | 20130  | 2       |
+
+## 16.字符函数
+```
+concat(string A, string B…)	连接多个字符串，合并为一个字符串，可以接受任意数量的输入字符串
+concat_ws(string SEP, string A, string B…)	链接多个字符串，字符串之间以指定的分隔符分开。
+```
+```linux
+hive -e"set hive.cli.print.header=true;
+set mapreduce.job.queuename=root.baseDepSarchQueue;
+select CONCAT_WS('@@',songname, max(ownercount),max(playcount)) from (
+select songname, ownercount, playcount from common.st_k_mixsong_part where dt='2018-10-01' and ownercount>0 and playcount>0 )a group by songname;">song_info.csv
+```
+**J这对于songname中有存在tab从而影响默认分割时很有用。可以自定义分隔符。**
