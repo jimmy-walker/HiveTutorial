@@ -4,7 +4,8 @@
 ![](picture/join.png)
 
 ##注意事项
-###0.任何join都会存在着发散。所以join后使用group by进行合并！
+###0.在Hive下，任何join都会存在着发散。所以join后使用group by进行合并！但是Spark中的join不会发散！
+可以用`df.dropDuplicates()`来查看前后`count()`数量是否变化。
 
 ###1.其中left/right outer join是left/right join的另一种写法
 
