@@ -123,3 +123,25 @@ LOCATION
 ;">createsampletable.txt
 ```
 
+## 建立ORC表
+
+注意很多时候由于textfile的分隔符问题，会导致select取出脏数据，因此对于歌曲名等不规则的实体，可以考虑建立orc表。
+
+```scala
+val sql_group_create= """
+create table if not exists """+s"""$datatable"""+"""_group_orc
+(
+query string,
+word string,
+score double
+)
+partitioned by (cdt string)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.ql.io.orc.OrcSerde' 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.orc.OrcInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat'
+"""
+```
+
