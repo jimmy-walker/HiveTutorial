@@ -8,5 +8,4 @@
 * [CodeFormat](hive-code.md)
 * [Hadoop](hadoop.md)
 * [Yarn](yarn.md)
-
-
+* [Spark](hive-spark.md)
