@@ -42,6 +42,26 @@ and inputtype in ('1','2','4')
 ;">insertsampletable.txt
 ```
 
+8.新建表并导入已有表
+
+```shell
+hive -e "
+set hive.cli.print.header=false;
+set mapreduce.job.queuename=root.baseDepSarchQueue;
+CREATE TABLE if not exists extern.jimmylian_query_rank_correct_final_orc_search_suggest_hot_menu_contain_output_correction 
+LIKE temp.jimmylian_query_rank_correct_final_orc_search_suggest_hot_menu_contain_output_correction;                                                         
+INSERT OVERWRITE TABLE extern.jimmylian_query_rank_correct_final_orc_search_suggest_hot_menu_contain_output_correction 
+PARTITION (cdt='${yyyy_mm_dd_1}') 
+select kw, correctionforce, correctiontip, search_pv, search_valid_pv, search_valid, search_result_num, 
+search_play_cnt, search_play_cnt_30s, result, menu_use, final, final_keyword, menu_keyword, 
+menu_keyword_set, menu_contain, keyword, position, contain_signal, singername, albumname,
+orisongname, oriothername, auxiliary, suffix, singerid, name_entity, similar_entity, unknown_entity 
+from temp.jimmylian_query_rank_correct_final_orc_search_suggest_hot_menu_contain_output_correction
+where cdt='${yyyy_mm_dd_1}';"
+```
+
+
+
 ## 查看该表的建立信息
 
 ```hive
