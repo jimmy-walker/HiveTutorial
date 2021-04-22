@@ -60,6 +60,33 @@ from temp.jimmylian_query_rank_correct_final_orc_search_suggest_hot_menu_contain
 where cdt='${yyyy_mm_dd_1}';"
 ```
 
+9.增加字段
+
+```sql
+alter table extern.jomei_search_cm_9156_click_train_union_sample_data_new add columns(scid_albumid string);
+```
+
+10.删除字段（就是在replace中不写该字段，其中partition column可以不用写在replace中）
+
+```sql
+//不用改cdt partition 
+alter table extern.jomei_search_cm_9156_click_train_union_sample_data_new replace columns(
+label double,
+label_old double,
+group int, 
+keyword string,
+choric_singer string,
+songname string,
+features_arr array<double>,
+score_new double,
+ownercount_new double,
+label_rank int, 
+weight double,
+search_valid_pv_vip bigint,
+albumname string,
+scid_albumid string);
+```
+
 
 
 ## 查看该表的建立信息
