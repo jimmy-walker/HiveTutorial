@@ -2,6 +2,7 @@
 
 ## 常用操作
 1.查看数据库
+
 ```hive
 show databases;
 ```
@@ -85,6 +86,17 @@ weight double,
 search_valid_pv_vip bigint,
 albumname string,
 scid_albumid string);
+```
+
+11.修改表名
+
+该功能也支持移动数据表位置
+
+```sql
+ALTER TABLE temp.jimmylian_menu_parse RENAME TO extern.jimmylian_menu_parse; 
+ALTER TABLE temp.jimmylian_menu_seg RENAME TO extern.jimmylian_menu_seg; 
+ALTER TABLE temp.jimmylian_menu_tag RENAME TO extern.jimmylian_menu_tag;
+ALTER TABLE temp.jimmylian_menu_list_tag RENAME TO extern.jimmylian_menu_list_tag;
 ```
 
 
