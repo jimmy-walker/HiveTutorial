@@ -99,7 +99,11 @@ ALTER TABLE temp.jimmylian_menu_tag RENAME TO extern.jimmylian_menu_tag;
 ALTER TABLE temp.jimmylian_menu_list_tag RENAME TO extern.jimmylian_menu_list_tag;
 ```
 
+12.修改列名
 
+```sql
+ALTER TABLE temp.search_offline_play_favor_ratio_h CHANGE play_favor_raito play_favor_ratio Double;
+```
 
 ## 查看该表的建立信息
 
