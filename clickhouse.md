@@ -130,7 +130,7 @@ Distributed(cluster, datebase, local_table[, sharding_key])
 
 
 ```sql
-CREATE TABLE realtime_local.kw_search_play_mixxxxxid_newsong_h
+CREATE TABLE realtime_local.kw_search_play_mixxxxxid_newsong_h on cluster xx_xx_cluster
 (
     etldate Date,
     hour String,
@@ -155,7 +155,7 @@ SETTINGS index_granularity = 8192
 ```
 
 ```sql
-CREATE TABLE realtime.kw_search_play_mixxxxxid_newsong_h
+CREATE TABLE realtime.kw_search_play_mixxxxxid_newsong_h on cluster xx_xx_cluster
 (
 etldate Date,
 hour String,
@@ -261,6 +261,82 @@ search_play_full_approx Int64
 etldate, etldate, 8192);
 ```
 
+#### 优化建表
+
+##### sharding key
+
+分布式表，选择合适的有意义的列作为sharding key.没有的话，再选择`rand()`。[参考资料](https://stackoverflow.com/questions/66296329/what-is-the-best-way-to-chose-shard-key-in-clickhouse)
+
+I am trying to understand how to choose the shard key in Clickhosue ? and how clickhosue chooses which shard? for example, i have a table with 3 columns : user_id, timestamp, city_id.
+
+should i shard by user_id or by City?
+
+i use murmurHash3_64 function.
+
+murmurHash3_64(city_id = 1) return :
+
+```
+┌──murmurHash3_64(1)─┐
+│ 956517343494314387 │
+└────────────────────┘
+```
+
+First of all you need to understand why do you need sharding by some meaningful column. Why you could not use `rand()`?
+
+Usually it's not a question what to use, because the sharding naturally follows the business requirements. If you don't have such requirements then you should use `rand()`.
+
+CH uses modulo operation + weight . It's very simple. If you have 6 shards then 956517343494314387 % 6 = 5 === shard number 5. So the rows with the same city_id will be placed on the same shard.
+
+So if you chose city_id as shard key and the distribution by the city usually unequal so the shading will be unequal too. All rows for the big cities like New York or Mexico will in the one shard.
+
+So user_id looks more appropriate as sharding key.
+
+##### 新旧建表语句
+
+[创建复制表](https://clickhouse.com/docs/zh/engines/table-engines/mergetree-family/replication/#creating-replicated-tables)
+
+在表引擎名称上加上 `Replicated` 前缀。例如：`ReplicatedMergeTree`。
+
+**Replicated\*MergeTree 参数**
+
+- `zoo_path` — ZooKeeper 中该表的路径。
+- `replica_name` — ZooKeeper 中的该表的副本名称。
+
+示例:
+
+```
+CREATE TABLE table_name
+(
+    EventDate DateTime,
+    CounterID UInt32,
+    UserID UInt32
+) ENGINE = ReplicatedMergeTree('/clickhouse/tables/{layer}-{shard}/table_name', '{replica}')
+PARTITION BY toYYYYMM(EventDate)
+ORDER BY (CounterID, EventDate, intHash32(UserID))
+SAMPLE BY intHash32(UserID)
+```
+
+已弃用的建表语法示例：
+
+```
+CREATE TABLE table_name
+(
+    EventDate DateTime,
+    CounterID UInt32,
+    UserID UInt32
+) ENGINE = ReplicatedMergeTree('/clickhouse/tables/{layer}-{shard}/table_name', '{replica}', EventDate, intHash32(UserID), (CounterID, EventDate, intHash32(UserID), EventTime), 8192)
+```
+
+#### 分区(partition by)、索引(order by)、表参数(8192)
+
+[参考资料](https://www.cnblogs.com/qiu-hua/p/15113528.html)
+
+分区粒度根据业务特点决定，不宜过粗或过细。**<u>一般选择按天分区</u>**，也可以指定为 Tuple()，以单表一亿数据为例，分区大小控制在 10-30 个为最佳。[新数据插入到表中时，这些数据会存储为按主键排序的新片段（块）。插入后 10-15 分钟，同一分区的各个片段会合并为一整个片段。](https://clickhouse.com/docs/zh/engines/table-engines/mergetree-family/custom-partitioning-key/)
+
+必须指定索引列，ClickHouse 中的**<u>索引列即排序列</u>**，通过 order by 指定，一般在查询条件中经常被用来充当筛选条件的属性被纳入进来；可以是单一维度，也可以是组合维度的索引；**通常需要满足高级列在前、查询频率大的在前原则；还有基数特别大的不适合做索引列，如用户表的 userid 字段**；通常**筛选后的数据满足在百万以内为最佳。**
+
+Index_granularity 是用来控制索引粒度的，**<u>默认是 8192，如非必须不建议调整</u>**。
+
 ### 调试
 
 使用`format TabSeparatedWithNames`导出列表名，否则不显示列表名，然后使用正则` +`替换成为`\t`，即可展示帮助调试。
@@ -274,6 +350,48 @@ and hour='17'
 and mixxxxxid = 'xxxxxxx' and kw = 'xx' format TabSeparatedWithNames 
 " | curl 'http://xx.x.xxx.xx:8123/?user=xx_xxxxx&password=xx_xxxxx' -d @- > "${dst_path}/${filename_txt}"
 check_file_size "${dst_path}/${filename_txt}"
+```
+
+### 数据类型
+
+#### 浮点数
+
+NaN和Inf
+
+与标准SQL相比，ClickHouse 支持以下类别的浮点数：
+
+- `Inf` – 正无穷
+
+```
+SELECT 0.5 / 0
+┌─divide(0.5, 0)─┐
+│            inf │
+└────────────────┘
+```
+
+- `-Inf` – 负无穷
+
+```
+SELECT -0.5 / 0
+┌─divide(-0.5, 0)─┐
+│            -inf │
+└─────────────────┘
+```
+
+- `NaN` – 非数字
+
+```
+SELECT 0 / 0
+
+┌─divide(0, 0)─┐
+│          nan │
+└──────────────┘
+```
+
+处理方法：
+
+```sql
+case when isNaN(play_last_new) then 0  when isInfinite(play_last_new) then 0 else play_last_new end as play_last_new, 
 ```
 
 
