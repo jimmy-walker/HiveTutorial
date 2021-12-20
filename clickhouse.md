@@ -767,6 +767,44 @@ writelog "Program finish successfully."
 
 ### and要换行
 
+### **group by 使用内存限制**
+
+默认情况下，ClickHouse会限制group by使用的内存量，默认设置为9.31GB，由users.xml文件中max_memory_usage参数控制，可以分别为每个用户设置不同的内存量。
+
+在运行任务前增加配置，当然前提是你有足够的内存。增加这个参数：
+
+```sql
+SET max_memory_usage = 128000000000; #128G，
+```
+
+如果你没有那么多的内存可用，ClickHouse可以通过设置这个“溢出”数据到磁盘：
+
+```sql
+set max_bytes_before_external_group_by=20000000000; #20G
+set max_memory_usage=40000000000; #40G
+```
+
+根据文档，如果需要使用max_bytes_before_external_group_by，建议将max_memory_usage设置为max_bytes_before_external_group_by大小的两倍。
+（原因是聚合需要分两个阶段进行：1.查询并且建立中间数据 2.合并中间数据。 数据“溢出”到磁盘一般发生在第一个阶段，如果没有发生数据“溢出”，ClickHouse在阶段1和阶段2可能需要相同数量的内存）。
+
+如果发现还是报内存不够或者服务器直接崩溃，报错如下：
+
+```sql
+:) SET max_memory_usage = 90000000000
+Ok.
+:) SET max_bytes_before_external_group_by = 30000000000
+Ok.
+:) select user_id,tool_id,sum(amount) from big_sgz_2017.bi_tool_list_all where dateline between '2021-03-23' and '2021-03-28' and amount > 0 and bi_pid in ('19','222','463','464','502','549','1015') group by user_id,tool_id
+
+↘ Progress: 273.08 million rows, 15.29 GB (1.66 million rows/s., 93.05 MB/s.) ███████████████████████████████████████████████████████████████████████████████▋                             73%
+Exception on client:
+Code: 32. DB::Exception: Attempt to read after eof: while receiving packet from localhost:9000
+
+Connecting to database prod at localhost:9000 as user default.
+Code: 210. DB::NetException: Connection refused (localhost:9000)
+```
+
+设置partial_merge_join = 1，但是运行速度会很慢。
 
 
 ### 
