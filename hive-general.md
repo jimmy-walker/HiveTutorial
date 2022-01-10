@@ -105,6 +105,12 @@ ALTER TABLE temp.jimmylian_menu_list_tag RENAME TO extern.jimmylian_menu_list_ta
 ALTER TABLE temp.search_offline_play_favor_ratio_h CHANGE play_favor_raito play_favor_ratio Double;
 ```
 
+13.删除分区
+
+```sql
+ALTER TABLE Table_Name DROP IF EXISTS PARTITION(column1<1,column2=101)
+```
+
 ## 查看该表的建立信息
 
 ```hive
