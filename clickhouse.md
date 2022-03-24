@@ -806,5 +806,12 @@ Code: 210. DB::NetException: Connection refused (localhost:9000)
 
 设置partial_merge_join = 1，但是运行速度会很慢。
 
+### read timeout at /usr/share/perl5/vendor_perl/Net/HTTP/Methods.pm
 
-### 
+connect_timeout, receive_timeout, send_timeout[¶](https://clickhouse.com/docs/en/operations/settings/settings/#connect-timeout-receive-timeout-send-timeout)
+
+Timeouts in seconds on the socket used for communicating with the client.
+
+Default value: 10, 300, 300.
+
+采用receive_timeout=600，提高socket时间。
