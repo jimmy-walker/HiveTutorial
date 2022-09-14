@@ -111,6 +111,14 @@ ALTER TABLE temp.search_offline_play_favor_ratio_h CHANGE play_favor_raito play_
 ALTER TABLE Table_Name DROP IF EXISTS PARTITION(column1<1,column2=101)
 ```
 
+14.修改字段类型
+
+从bigint修改到double
+
+```sql
+Alter table 表名  change column 原字段名称  现字段名称  数据类型
+```
+
 ## 查看该表的建立信息
 
 ```hive
